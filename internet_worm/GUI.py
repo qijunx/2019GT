@@ -1,8 +1,10 @@
 # -*-coding:utf-8-*-
 # 导入所需要的模块
 import tkinter as tk
+import re
 from tkinter import messagebox
 from tkinter import ttk
+from spider import login_url, get_html_text, text_write, excel_write
 
 
 # 定义窗体切换标志的标志位
@@ -15,42 +17,8 @@ quit_flag = True
 user_name = 0
 password = 0
 
-
-# 用户按下查询键后执行的函数
-def query_results():
-    query = tk.messagebox.askquestion(title="最后警告", message="最后一次确定了？生死有命，富贵在天！Action？")
-    if query == "yes":
-        pass
-    else:
-        print("查询失败")
-        messagebox.showerror(title="提示", message="查询失败")
-
-
-# 用户按下导出为txt文档键后执行的函数
-def export_txt():
-    txt_export = tk.messagebox.askquestion(title="提示", message="你确定要将成绩导出为txt文档吗？")
-    if txt_export == "yes":
-        print("导出txt文档成功")
-        messagebox.showinfo(title="提示", message="导出txt成功")
-    else:
-        print("导出txt文档失败")
-        messagebox.showerror(title="提示", message="导出txt失败")
-
-
-# 用户按下导出为Excel表格键后执行的函数
-def export_excel():
-    excel_export = tk.messagebox.askquestion(title="提示", message="你确定要将成绩导出为excel表格吗？")
-    if excel_export == "yes":
-        print("导出excel表格成功")
-        messagebox.showinfo(title="提示", message="导出excel表格成功")
-    else:
-        print("导出excel表格失败")
-        messagebox.showerror(title="提示", message="导出excel表格失败")
-
-
-# 对表格控件添加信息
-def insert_information():
-    pass
+new_lists = []
+new_dicts = {}
 
 
 # 登录界面
@@ -63,14 +31,24 @@ def login_in_interface():
         user_name = var_user_name.get()
         password = var_password.get()
         login = tk.messagebox.askquestion(title="温馨提示", message="你确定要进入吗？一入此系统，后果自负！")
-        if login == "yes":
+        text = login_url(user_name, password)
+        return_flag1 = re.findall(r'<title>(.*?)</title>', text, re.S)
+        print(return_flag1)
+        if login == "yes" and return_flag1[0] == "学分制综合教务":
             messagebox.showinfo(title="提示", message="登录成功")
             print("登录成功")
             change_screen_flag = 1
             login_window.destroy()
-        else:
+        elif login == "no" or return_flag1[0] == "URP 综合教务系统 - 登录":
             print("登录失败")
-            messagebox.showerror(title="提示", message="登录失败")
+            return_flag2 = re.findall(r'<td.*?<font.*?>(.*?)</font></strong>', text, re.S)
+            print(return_flag2)
+            if return_flag2[0] == "你输入的验证码错误，请您重新输入！":
+                print("你输入的验证码错误，请您重新输入！")
+                messagebox.showerror(title="提示", message="验证码错误，登录失败，请重新输入")
+            elif return_flag2[0] == "您的密码不正确，请您重新输入！":
+                print("您的密码不正确，请您重新输入！")
+                messagebox.showerror(title="提示", message="密码错误，登录失败，请重新输入")
 
     # 用户按下退出键后执行的函数
     def login_quit_system():
@@ -149,6 +127,54 @@ def function_interface():
             print("退出失败")
             messagebox.showerror(title="提示", message="退出失败")
 
+    # 对表格控件添加信息
+    def insert_information():
+        global new_lists
+        deal_lists = new_lists.copy()
+        del deal_lists[0]
+        print(new_lists)
+        print(deal_lists)
+        i = 0
+        for deal_list in deal_lists:
+            tree.insert("", i, value=deal_list)
+            i = i + 1
+
+    # 用户按下查询键后执行的函数
+    def query_results():
+        global new_lists, new_dicts
+        query = tk.messagebox.askquestion(title="最后警告", message="最后一次确定了？生死有命，富贵在天！Action？")
+        if query == "yes":
+            new_lists, new_dicts = get_html_text()
+            print("查询成功")
+            insert_information()
+        else:
+            print("查询失败")
+            messagebox.showerror(title="提示", message="查询失败")
+
+    # 用户按下导出为txt文档键后执行的函数
+    def export_txt():
+        global new_dicts
+        txt_export = tk.messagebox.askquestion(title="提示", message="你确定要将成绩导出为txt文档吗？")
+        if txt_export == "yes":
+            print("导出txt文档成功")
+            text_write("成绩单1.txt", new_dicts)
+            messagebox.showinfo(title="提示", message="导出txt成功")
+        else:
+            print("导出txt文档失败")
+            messagebox.showerror(title="提示", message="导出txt失败")
+
+    # 用户按下导出为Excel表格键后执行的函数
+    def export_excel():
+        global new_lists
+        excel_export = tk.messagebox.askquestion(title="提示", message="你确定要将成绩导出为excel表格吗？")
+        if excel_export == "yes":
+            print("导出excel表格成功")
+            excel_write("成绩单1.xls", new_lists)
+            messagebox.showinfo(title="提示", message="导出excel表格成功")
+        else:
+            print("导出excel表格失败")
+            messagebox.showerror(title="提示", message="导出excel表格失败")
+
     global change_screen_flag
     function_window = tk.Tk()
     function_window.resizable(False, False)
@@ -189,7 +215,7 @@ def function_interface():
     tree.column("课程属性", width=150, anchor='center')
     tree.column("成绩", width=200, anchor='center')
 
-    tree.heading("课程名", text="课程名")
+    tree.heading("课程名", text="课程名称")
     tree.heading("学分", text="学分")
     tree.heading("课程属性", text="课程属性")
     tree.heading("成绩", text="成绩")

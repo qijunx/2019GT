@@ -4,10 +4,8 @@ from PIL import Image
 from urllib import request
 from aip import AipOcr
 
-# 百度AI上创建的文字识别应用
 
-
-# 获取文件内容
+# 读取图片
 def get_file_content(image):
     with open(image, 'rb') as fp:
         return fp.read()
@@ -38,6 +36,7 @@ def picture_processing(image):
 
 # OCR识别
 def ocr_distinguish(url):
+    # 百度AI上创建的文字识别应用
     # 以下是我创建的应用对应于我的应用信息，不可外传
     app_id = "16949803"
     api_key = "LwOgZ3kzNtGobdXjU8gMuyGp"
@@ -72,4 +71,3 @@ if __name__ == '__main__':
     v_yzm_url = "http://jw.hpu.edu.cn/validateCodeAction.do"  # 验证码图片的url
 
     v_yzm = ocr_distinguish(v_yzm_url)
-
