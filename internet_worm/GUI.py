@@ -5,6 +5,7 @@ import re
 from tkinter import messagebox
 from tkinter import ttk
 from spider import login_url, get_html_text, text_write, excel_write
+from VPN import vpn_login, vpn_get_html_text
 
 
 # 定义窗体切换标志的标志位
@@ -13,6 +14,8 @@ change_screen_flag = 0
 back_flag = False
 # 定义退出窗口的标志位
 quit_flag = True
+# 定义是否是由VPN登录的标志位
+is_vpn_flag = 0
 
 user_name = 0
 password = 0
@@ -27,11 +30,22 @@ def login_in_interface():
 
     # 用户按下登录键后执行的函数
     def user_login():
-        global user_name, password, change_screen_flag
+        global user_name, password, change_screen_flag, is_vpn_flag
         user_name = var_user_name.get()
         password = var_password.get()
         login = tk.messagebox.askquestion(title="温馨提示", message="你确定要进入吗？一入此系统，后果自负！")
-        text = login_url(user_name, password)
+        try:
+            text = login_url(user_name, password)
+        except:
+            vpn_flag = tk.messagebox.askquestion(title="温馨提示", message="你的网络不是校园网，"
+                                                                       "请切换至校园网登录或者点击是使用VPN登录")
+            if vpn_flag == "yes":
+                is_vpn_flag = 1
+                text = vpn_login(user_name, password)
+            else:
+                is_vpn_flag = 0
+                messagebox.showinfo(title="提示", message="你放弃使用VPN登录请切换至校园再使用本系统")
+                return ""
         return_flag1 = re.findall(r'<title>(.*?)</title>', text, re.S)
         print(return_flag1)
         if login == "yes" and return_flag1[0] == "学分制综合教务":
@@ -144,7 +158,10 @@ def function_interface():
         global new_lists, new_dicts
         query = tk.messagebox.askquestion(title="最后警告", message="最后一次确定了？生死有命，富贵在天！Action？")
         if query == "yes":
-            new_lists, new_dicts = get_html_text()
+            if is_vpn_flag == 0:
+                new_lists, new_dicts = get_html_text()
+            elif is_vpn_flag == 1:
+                new_lists, new_dicts = vpn_get_html_text()
             print("查询成功")
             insert_information()
         else:
