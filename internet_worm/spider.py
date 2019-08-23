@@ -5,6 +5,8 @@ import xlwt
 import re
 from OCR import ocr_distinguish
 import time
+from PIL import Image
+
 
 headers = {
         "Accept": "text / html, application / xhtml + xml, image / jxr, * / *",
@@ -25,17 +27,21 @@ session = requests.session()
 #     return yzm
 
 
-def text_write(filename, data):  # filename为写入txt文件的路径，data为要写入数据列表.
+# 将数据写入txt文件中
+def txt_write(filename, data):  # filename为写入txt文件的路径，data为要写入数据列表.
     file = open(filename, 'w', encoding="utf-8")
     for i in range(len(data)):
-        s = str(data[i]).replace('[', '').replace(']', '')  # 去除[],这两行按数据不同，可以选择
-        s = s.replace("'", '').replace(',', '       ').replace('{', '').replace('}', '') + '\n'    # 去除单引号，逗号，每行末尾追加换行符
+        # 去除[],这两行按数据不同，可以选择
+        s = str(data[i]).replace('[', '').replace(']', '')
+        # 去除单引号，逗号，大括号，每行末尾追加换行符
+        s = s.replace("'", '').replace(',', '       ').replace('{', '').replace('}', '') + '\n'
         file.write(s)
     file.close()
     print("保存文件成功")
 
 
-def excel_write(file_path, datas):
+# 将数据写入excel文件中
+def excel_write(file_path, datas):  # file_path为写入excel文件的路径，datas为要写入数据列表
     f = xlwt.Workbook()
     sheet1 = f.add_sheet(u'sheet1', cell_overwrite_ok=True)  # 创建sheet
     # 将数据写入第 i 行，第 j 列
@@ -48,31 +54,41 @@ def excel_write(file_path, datas):
 
 
 # 登录网页
-def login_url(user_name, password):
-    with open("yzm1.png", "wb") as f:
-        f.write(session.get(yzm_url, headers=headers).content)
-        f.close()
+def login_url(user_name, password, is_d_yzm):
+    # 判断识别验证码的输入方式
+    if is_d_yzm == "yes":  # 手动输入
+        with open("yzm1.png", "wb") as f:
+            f.write(session.get(yzm_url, headers=headers).content)
+            f.close()
+        image = Image.open("yzm1.png")
+        image.show()
         yzm = input("请查看当前目录下的验证码图片：")
-    # yzm1 = ocr_distinguish(yzm_url)
-        print(type(yzm))
-        time.sleep(1)
-        post_data = {
-            "zjh": user_name,
-            "mm": password,
-            "v_yzm": yzm
-        }
-        loginresponse = session.post(post_url, data=post_data, headers=headers)
-        print("状态码：" + str(loginresponse.status_code))
-        print(loginresponse.text)
-        print(yzm)
+    elif is_d_yzm == "no":  # OCR识别
+        yzm = ocr_distinguish(yzm_url)
+    else:
+        return ""
+    print(type(yzm))
+    time.sleep(1)
+    post_data = {
+        "zjh": user_name,
+        "mm": password,
+        "v_yzm": yzm
+    }
+    # 获取响应， 并保存响应的cookie
+    loginresponse = session.post(post_url, data=post_data, headers=headers)
+    print("状态码：" + str(loginresponse.status_code))
+    print(loginresponse.text)
+    print(yzm)
     return loginresponse.text
 
 
 # 获取网页的源代码和数据处理
 def get_html_text():
+    # 获取成绩所在网页的响应，并提取源代码
     response = session.get(mubiao_url, headers=headers)
     print(response.text)
 
+    # 采用正则表达式获取课程名称
     kechengmingchengs = re.findall(r'<tr class="odd".*?<td.*?<td.*?<td align="center"(.*?)</td>.*?</tr>',
                                    response.text, re.S)
     kechengmingcheng_list = []
@@ -83,6 +99,7 @@ def get_html_text():
         kechengmingcheng_list.append(kechengmingcheng)
     # print(kechengmingcheng_list)
 
+    # 采用正则表达式获取学分
     xuefens = re.findall(r'<tr class="odd".*?<td.*?<td.*?<td.*?<td.*?<td align="center"(.*?)</td>.*?</tr>',
                          response.text, re.S)
     xuefen_list = []
@@ -93,6 +110,7 @@ def get_html_text():
         xuefen_list.append(xuefen)
     # print(xuefen_list)
 
+    # 采用正则表达式获取课程属性
     kechengshuxings = re.findall(
         r'<tr class="odd".*?<td.*?<td.*?<td.*?<td.*?<td.*?<td align="center"(.*?)</td>.*?</tr>', response.text, re.S)
     kechengshuxing_list = []
@@ -103,11 +121,13 @@ def get_html_text():
         kechengshuxing_list.append(kechengshuxing)
     # print(kechengshuxing_list)
 
+    # 采用正则表达式获取成绩
     chengjis = re.findall(r'<td.*?<p.*?>(.*?)&nbsp.*?</P>', response.text, re.S)
     while '' in chengjis:
         chengjis.remove('')
     # print(chengjis)
 
+    # 将取出的信息以字典放入列表， 便于写入txt文件
     all_dicts = []
     for value in zip(kechengmingcheng_list, xuefen_list, kechengshuxing_list, chengjis):
         kechengmingcheng, xuefen, kechengshuxing, chengji = value
@@ -119,6 +139,7 @@ def get_html_text():
         }
         all_dicts.append(all_dict)
 
+    # 将取出的信息放入列表， 便于写入excel文件
     all_lists = [["课程名称", "学分", "课程属性", "成绩"]]
     for value in zip(kechengmingcheng_list, xuefen_list, kechengshuxing_list, chengjis):
         kechengmingcheng, xuefen, kechengshuxing, chengji = value
@@ -137,14 +158,15 @@ def get_html_text():
 if __name__ == '__main__':
     # user_name = input("你的账号是：")
     # password = input("你的密码是：")
-    text = login_url("311808010132", "zj200043")
+    is_d_yzm = input("请输入辨认验证码的方式\nyes为手动输入，no为OCR自动识别\n")
+    text = login_url("311808010132", "zj200043", is_d_yzm)
     # text = login_url(user_name, password)
     return_flag1 = re.findall(r'<title>(.*?)</title>', text, re.S)
     print(return_flag1)
     if return_flag1[0] == "学分制综合教务":
         print("登录成功")
         all_lists_, all_dict_ = get_html_text()
-        text_write("成绩单.txt", all_dict_)
+        txt_write("成绩单.txt", all_dict_)
         excel_write("成绩单.xls", all_lists_)
     elif return_flag1[0] == "URP 综合教务系统 - 登录":
         return_flag2 = re.findall(r'<td.*?<font.*?>(.*?)</font></strong>', text, re.S)

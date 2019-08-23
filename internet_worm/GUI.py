@@ -4,7 +4,7 @@ import tkinter as tk
 import re
 from tkinter import messagebox
 from tkinter import ttk
-from spider import login_url, get_html_text, text_write, excel_write
+from spider import login_url, get_html_text, txt_write, excel_write
 from VPN import vpn_login, vpn_get_html_text
 
 
@@ -17,9 +17,11 @@ quit_flag = True
 # 定义是否是由VPN登录的标志位
 is_vpn_flag = 0
 
+# 全局变量用户名和密码
 user_name = 0
 password = 0
 
+# 列表和字典
 new_lists = []
 new_dicts = {}
 
@@ -31,38 +33,54 @@ def login_in_interface():
     # 用户按下登录键后执行的函数
     def user_login():
         global user_name, password, change_screen_flag, is_vpn_flag
+        # 获取用户输入的用户名和密码
         user_name = var_user_name.get()
         password = var_password.get()
+        # 询问用户是否进入
         login = tk.messagebox.askquestion(title="温馨提示", message="你确定要进入吗？一入此系统，后果自负！")
-        try:
-            text = login_url(user_name, password)
-        except:
-            vpn_flag = tk.messagebox.askquestion(title="温馨提示", message="你的网络不是校园网，"
-                                                                       "请切换至校园网登录或者点击是使用VPN登录")
-            if vpn_flag == "yes":
-                is_vpn_flag = 1
-                text = vpn_login(user_name, password)
-            else:
-                is_vpn_flag = 0
-                messagebox.showinfo(title="提示", message="你放弃使用VPN登录请切换至校园再使用本系统")
-                return ""
-        return_flag1 = re.findall(r'<title>(.*?)</title>', text, re.S)
-        print(return_flag1)
-        if login == "yes" and return_flag1[0] == "学分制综合教务":
-            messagebox.showinfo(title="提示", message="登录成功")
-            print("登录成功")
-            change_screen_flag = 1
-            login_window.destroy()
-        elif login == "no" or return_flag1[0] == "URP 综合教务系统 - 登录":
+        if login == "yes":  # 用户确认进入
+            # 让用户选择验证码的识别方式
+            yzm_imput = tk.messagebox.askquestion(title="温馨提示", message="请选择验证码的输入方式\n"
+                                                                        "是为使用手动输入方式\n否为使用OCR识别方式\n"
+                                                                        "使用OCR识别方式登录成功率较低，可能要多试几次！")
+            # 判断是否是校园网登录
+            try:
+                text = login_url(user_name, password, yzm_imput)  # 是校园网
+            except:
+                # 不是校园网
+                vpn_flag = tk.messagebox.askquestion(title="温馨提示", message="你的网络不是校园网，"
+                                                                           "请切换至校园网登录或者点击是使用VPN登录")
+                # 用户选择VPN登录
+                if vpn_flag == "yes":
+                    is_vpn_flag = 1
+                    text = vpn_login(user_name, password, yzm_imput)
+                # 用户不选择VPN登录
+                else:
+                    is_vpn_flag = 0
+                    messagebox.showinfo(title="提示", message="你放弃使用VPN登录请切换至校园再使用本系统")
+                    return ""
+            # 获取title中的内容， 用来判断是否登录成功
+            return_flag1 = re.findall(r'<title>(.*?)</title>', text, re.S)
+            print(return_flag1)
+            if return_flag1[0] == "学分制综合教务":
+                messagebox.showinfo(title="提示", message="登录成功")
+                print("登录成功")
+                change_screen_flag = 1
+                login_window.destroy()
+            elif return_flag1[0] == "URP 综合教务系统 - 登录":
+                print("登录失败")
+                # 获取报错信息， 判断错误类型， 并且返回给用户
+                return_flag2 = re.findall(r'<td.*?<font.*?>(.*?)</font></strong>', text, re.S)
+                print(return_flag2)
+                if return_flag2[0] == "你输入的验证码错误，请您重新输入！":
+                    print("你输入的验证码错误，请您重新输入！")
+                    messagebox.showerror(title="提示", message="验证码错误，登录失败，请重新输入")
+                elif return_flag2[0] == "您的密码不正确，请您重新输入！":
+                    print("您的密码不正确，请您重新输入！")
+                    messagebox.showerror(title="提示", message="密码错误，登录失败，请重新输入")
+        elif login == "no":  # 用户放弃登录
             print("登录失败")
-            return_flag2 = re.findall(r'<td.*?<font.*?>(.*?)</font></strong>', text, re.S)
-            print(return_flag2)
-            if return_flag2[0] == "你输入的验证码错误，请您重新输入！":
-                print("你输入的验证码错误，请您重新输入！")
-                messagebox.showerror(title="提示", message="验证码错误，登录失败，请重新输入")
-            elif return_flag2[0] == "您的密码不正确，请您重新输入！":
-                print("您的密码不正确，请您重新输入！")
-                messagebox.showerror(title="提示", message="密码错误，登录失败，请重新输入")
+            messagebox.showerror(title="提示", message="登录失败，请重试")
 
     # 用户按下退出键后执行的函数
     def login_quit_system():
@@ -73,14 +91,14 @@ def login_in_interface():
             print("退出成功")
             quit_flag = False
             back_flag = True
-            login_window.destroy()
+            login_window.destroy()  # 退出窗口
         else:
             print("退出失败")
             messagebox.showerror(title="提示", message="退出失败")
 
     login_window = tk.Tk()
     login_window.resizable(False, False)
-    login_window.title("校园网爬虫系统")
+    login_window.title("校园网爬虫系统——登录界面")
     login_window.geometry("450x300")
 
     # 欢迎
@@ -150,7 +168,7 @@ def function_interface():
         print(deal_lists)
         i = 0
         for deal_list in deal_lists:
-            tree.insert("", i, value=deal_list)
+            tree.insert("", i, value=deal_list)  # 将列表内容显示在屏幕上
             i = i + 1
 
     # 用户按下查询键后执行的函数
@@ -174,7 +192,7 @@ def function_interface():
         txt_export = tk.messagebox.askquestion(title="提示", message="你确定要将成绩导出为txt文档吗？")
         if txt_export == "yes":
             print("导出txt文档成功")
-            text_write("成绩单1.txt", new_dicts)
+            txt_write("成绩单1.txt", new_dicts)
             messagebox.showinfo(title="提示", message="导出txt成功")
         else:
             print("导出txt文档失败")

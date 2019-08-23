@@ -48,7 +48,7 @@ def ocr_distinguish(url):
     image = Image.open("captcha1.jpg")
     # 图片处理
     picture_processing(image)
-    image.show()
+    # image.show()
     options = {
         'detect_direction': 'true',
         'language_type': 'CHN_ENG',
