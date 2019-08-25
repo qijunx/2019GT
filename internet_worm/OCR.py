@@ -1,10 +1,8 @@
 # -*-coding:utf-8-*-
 # 导入所需要的模块
 from PIL import Image
-# from urllib import request
 import requests
 from aip import AipOcr
-
 
 
 # 读取图片
@@ -47,7 +45,7 @@ def ocr_distinguish(url, session, headers):
     aipocr = AipOcr(app_id, api_key, secret_key)
     # 从url获取图片，并将图片下载到本地
     with open("captcha1.jpg", "wb") as f:
-        f.write(session.get(url, headers=headers).content)
+        f.write(session.get(url, headers=headers, verify=False).content)
         f.close()
     # request.urlretrieve(url, "captcha1.jpg")
     image = Image.open("captcha1.jpg")
