@@ -40,7 +40,7 @@ def vpn_login(username, password, is_d_yzm):
             f.close()
             yzm = input("请查看当前目录下的验证码图片：")
     elif is_d_yzm == "no":  # OCR识别
-        yzm = ocr_distinguish(VPN_yzm_url)
+        yzm = ocr_distinguish(VPN_yzm_url, session, headers)
     else:
         return ""
     print(type(yzm))

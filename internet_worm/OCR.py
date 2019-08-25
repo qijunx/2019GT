@@ -1,8 +1,10 @@
 # -*-coding:utf-8-*-
 # 导入所需要的模块
 from PIL import Image
-from urllib import request
+# from urllib import request
+import requests
 from aip import AipOcr
+
 
 
 # 读取图片
@@ -35,7 +37,7 @@ def picture_processing(image):
 
 
 # OCR识别
-def ocr_distinguish(url):
+def ocr_distinguish(url, session, headers):
     # 百度AI上创建的文字识别应用
     # 以下是我创建的应用对应于我的应用信息，不可外传
     app_id = "16949803"
@@ -44,7 +46,10 @@ def ocr_distinguish(url):
 
     aipocr = AipOcr(app_id, api_key, secret_key)
     # 从url获取图片，并将图片下载到本地
-    request.urlretrieve(url, "captcha1.jpg")
+    with open("captcha1.jpg", "wb") as f:
+        f.write(session.get(url, headers=headers).content)
+        f.close()
+    # request.urlretrieve(url, "captcha1.jpg")
     image = Image.open("captcha1.jpg")
     # 图片处理
     picture_processing(image)
@@ -68,6 +73,15 @@ def ocr_distinguish(url):
 
 
 if __name__ == '__main__':
+    headers = {
+        "Accept": "text / html, application / xhtml + xml, image / jxr, * / *",
+        "Accept - Encoding": "gzip, deflate",
+        "Accept - Language": "zh - CN",
+        "Connection": "Keep-Alive",
+        "User-Agent": "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 10.0; WOW64; Trident/7.0; .NET4.0C;"
+                      " .NET4.0E; .NET CLR 2.0.50727; .NET CLR 3.0.30729; .NET CLR 3.5.30729)"
+    }
+    session = requests.session()
     v_yzm_url = "http://jw.hpu.edu.cn/validateCodeAction.do"  # 验证码图片的url
 
-    v_yzm = ocr_distinguish(v_yzm_url)
+    v_yzm = ocr_distinguish(v_yzm_url, session, headers=headers)
