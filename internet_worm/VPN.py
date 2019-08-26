@@ -38,7 +38,9 @@ def vpn_login(username, password, is_d_yzm):
         with open("yzm_test.png", "wb") as f:
             f.write(session.get(VPN_yzm_url, headers=headers, verify=False).content)
             f.close()
-            yzm = input("请查看当前目录下的验证码图片：")
+        image = Image.open("yzm_test.png")
+        image.show()
+        yzm = input("请查看当前目录下的验证码图片：")
     elif is_d_yzm == "no":  # OCR识别
         yzm = ocr_distinguish(VPN_yzm_url, session, headers)
     else:
@@ -128,6 +130,3 @@ def vpn_get_html_text():
         print(all_list)
 
     return all_lists, all_dicts
-
-
-

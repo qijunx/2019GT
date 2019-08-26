@@ -156,11 +156,10 @@ def get_html_text():
 
 
 if __name__ == '__main__':
-    # user_name = input("你的账号是：")
-    # password = input("你的密码是：")
+    user_name = input("你的账号是：")
+    password = input("你的密码是：")
     is_d_yzm = input("请输入辨认验证码的方式\nyes为手动输入，no为OCR自动识别\n")
-    text = login_url("311808010132", "zj200043", is_d_yzm)
-    # text = login_url(user_name, password)
+    text = login_url(user_name, password, is_d_yzm)
     return_flag1 = re.findall(r'<title>(.*?)</title>', text, re.S)
     print(return_flag1)
     if return_flag1[0] == "学分制综合教务":

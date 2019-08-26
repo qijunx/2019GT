@@ -174,7 +174,7 @@ def function_interface():
     # 用户按下查询键后执行的函数
     def query_results():
         global new_lists, new_dicts
-        query = tk.messagebox.askquestion(title="最后警告", message="最后一次确定了？生死有命，富贵在天！Action？")
+        query = tk.messagebox.askquestion(title="最后警告", message="最后一次确定了？一旦开始可能就没法结束了？")
         if query == "yes":
             if is_vpn_flag == 0:
                 new_lists, new_dicts = get_html_text()
@@ -188,11 +188,11 @@ def function_interface():
 
     # 用户按下导出为txt文档键后执行的函数
     def export_txt():
-        global new_dicts
+        global new_dicts, user_name
         txt_export = tk.messagebox.askquestion(title="提示", message="你确定要将成绩导出为txt文档吗？")
         if txt_export == "yes":
             print("导出txt文档成功")
-            txt_write("成绩单1.txt", new_dicts)
+            txt_write(user_name + "成绩单.txt", new_dicts)
             messagebox.showinfo(title="提示", message="导出txt成功")
         else:
             print("导出txt文档失败")
@@ -200,11 +200,11 @@ def function_interface():
 
     # 用户按下导出为Excel表格键后执行的函数
     def export_excel():
-        global new_lists
+        global new_lists, user_name
         excel_export = tk.messagebox.askquestion(title="提示", message="你确定要将成绩导出为excel表格吗？")
         if excel_export == "yes":
             print("导出excel表格成功")
-            excel_write("成绩单1.xls", new_lists)
+            excel_write(user_name + "成绩单.xls", new_lists)
             messagebox.showinfo(title="提示", message="导出excel表格成功")
         else:
             print("导出excel表格失败")
